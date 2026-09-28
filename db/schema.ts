@@ -9,4 +9,4 @@ export const customers = pgTable("customers", {
     .notNull()
     .default(0),
   lastPaid: text("last_paid").notNull().default("never"),
-});
+}).enableRLS();
