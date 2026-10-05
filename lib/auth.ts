@@ -1,20 +1,21 @@
-import { createClient } from "@supabase/supabase-js";
 import { eq } from "drizzle-orm";
+import { cache } from "react";
+import { redirect } from "next/navigation";
 
 import { db } from "@/db";
 import { profiles } from "@/db/schema";
+import { createClient } from "@/lib/supabase/server";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
-);
+export type Profile = typeof profiles.$inferSelect;
 
-export async function getProfile(request: Request) {
-  const token = request.headers
+export async function getProfile(
+  request?: Request
+): Promise<Profile | null> {
+  const token = request?.headers
     .get("Authorization")
     ?.replace("Bearer ", "");
 
-  if (!token) return null;
+  const supabase = await createClient();
 
   const { data } = await supabase.auth
     .getClaims(token)
@@ -36,3 +37,13 @@ export async function getProfile(request: Request) {
 
   return profile;
 }
+
+export const verifyUser = cache(async () => {
+  const profile = await getProfile();
+
+  if (!profile) {
+    redirect("/login");
+  }
+
+  return profile;
+});
